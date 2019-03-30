@@ -26,18 +26,13 @@ public class App {
 	
     public static void main(String[] args) {
     	
-    	Scanner input = new Scanner(System.in);
-    	
-    	System.out.println("Make sure to back up the csv (Press any key and enter to continue)");
-    	input.next();		// Wait until there is confirmation of the backup from the user
-    	input.close();
-    	
         try {
 			
-        	InetAddress addr = InetAddress.getByName("10.12.40.163");
+        	String ipNIC = "10.12.40.163";
+        	InetAddress addr = InetAddress.getByName(ipNIC);
         	PcapNetworkInterface nif = Pcaps.getDevByAddress(addr);
         	
-        	observeInterface(nif, 1);
+        	observeInterface(nif, 1, ipNIC);
         	
         } catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -54,7 +49,7 @@ public class App {
      * @param nif The interface to observe
      * @param timeInterval The amount of time to wait (in seconds) before returning the data information
      */
-    private static void observeInterface(PcapNetworkInterface nif, int timeInterval) {
+    private static void observeInterface(PcapNetworkInterface nif, int timeInterval, String ipNIC) {
     	
     	int snapLen = 65536;
         int handleTimeout = 1000;		// 1 second, The amount of time the handle waits to get a packet
@@ -65,7 +60,7 @@ public class App {
     		
 			PcapHandle handle = nif.openLive(snapLen, mode, handleTimeout);
 			
-			processPackets(handle, timeInterval, processTimeout);
+			processPackets(handle, timeInterval, processTimeout, ipNIC);
 			
 			handle.close();
 			
@@ -82,12 +77,13 @@ public class App {
      * @param timeInterval The number of seconds in between each report
      * @param timeout The time the program waits before it exits from a PcapNativeException
      */
-    private static void processPackets(PcapHandle handle, int timeInterval, int timeout) {
+    private static void processPackets(PcapHandle handle, int timeInterval, int timeout, String ipNIC) {
     	
     	int dataAmount = 0;
     	long now = System.currentTimeMillis();
     	long previousReset = now;
-    	String file = "C:\\Users\\hunte\\Documents\\networkAnalysis\\networkData.csv";
+    	// TODO Instead of writing to this file, the data should be sent to the server
+    	String file = "C:\\Users\\hunte\\Documents\\networkAnalysis\\data\\raw\\" + ipNIC + "_" + getCurrentDateTimeFileName() + ".csv"; // Creates file in the directory containing the analysis program
     	
     	// Write the header for the csv, overwrite previous data
     	write(file, "time,bytes/sec", false);
@@ -161,11 +157,21 @@ public class App {
     }
     
     /**
-     * Gets the current time in ISO-8601 format
+     * Gets the current time in ISO-8601 UTC format
      * 
-     * @return The current time in ISO-8601 format
+     * @return The current time in ISO-8601 UTC format
      */
     private static String getCurrentDateTime() {
     	return Instant.now().toString();
+    }
+    
+    
+    /**
+     * Gets the current time in ISO_8601 UTC format and in a format to be used in a file name
+     * 
+     * @return The current time in ISO-8601 UTC format with all ":" and "." removed
+     */
+    private static String getCurrentDateTimeFileName() {
+    	return getCurrentDateTime().replace(":", "").replace(".", "");
     }
 }
