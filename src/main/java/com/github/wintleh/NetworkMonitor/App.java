@@ -114,11 +114,18 @@ public class App {
     	long now = System.currentTimeMillis();
     	long previousReset = now;
     	
-    	String file = "/Users/davidcrafts/Dropbox/networkData.csv";
-      	String file01 = "/Users/davidcrafts/Dropbox/packetData.csv";
+    	
     	
     	InetAddress addr= InetAddress.getLocalHost();// gets localhost Ip address //Enter your ip address here
+    	
+    	
+    	
+    	String file = "/Users/davidcrafts/Dropbox/network-analysis-data/" + getIpAddress(addr.getAddress())  + "_" 
+    			+ getCurrentDateTime().substring(0, 10) + ".csv";
+      	String file01 = "/Users/davidcrafts/Dropbox/network-analysis-data/" + getIpAddress(addr.getAddress())  + "_" 
+    			+ getCurrentDateTime().substring(0, 10) + "_COUNT" + ".csv";
     
+    	
     	// Write the header for the csv, overwrite previous data
     	write(file, "time,bytes/sec", false);
     	
@@ -332,7 +339,27 @@ public class App {
 				System.exit(1);
 			}
 			
+
 		
 	}//END sendToServe
+    
+    
+    //By Wayan Saryada @ https://kodejava.org/how-do-i-convert-raw-ip-address-to-string/
+    private static String getIpAddress(byte[] rawBytes) {
+        int i = 4;
+        StringBuilder ipAddress = new StringBuilder();
+        for (byte raw : rawBytes) {
+            ipAddress.append(raw & 0xFF);
+            if (--i > 0) {
+                ipAddress.append(".");
+            }
+        }
+        return ipAddress.toString();
+    }
+    
+    
+    
+    
+    
     
 } //END APP
