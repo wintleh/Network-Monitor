@@ -1,6 +1,7 @@
 package com.github.wintleh.NetworkMonitor;
 
 import java.io.BufferedReader;
+
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -44,6 +45,12 @@ import org.pcap4j.util.NifSelector;
 import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.packet.UdpPacket;
 
+/**
+ * 
+ * 
+ * @author davidcrafts
+ *
+ */
 public class App {
 	
 
@@ -113,15 +120,13 @@ public class App {
     	int dataAmount = 0;
     	long now = System.currentTimeMillis();
     	long previousReset = now;
+    	InetAddress addr= InetAddress.getLocalHost();// gets localhost Ip address and pc name
     	
-    	
-    	
-    	InetAddress addr= InetAddress.getLocalHost();// gets localhost Ip address //Enter your ip address here
-    	
-    	
-    	
+    	//Bytes per second file path
     	String file = "/Users/davidcrafts/Dropbox/network-analysis-data/" + getIpAddress(addr.getAddress())  + "_" 
     			+ getCurrentDateTime().substring(0, 10) + ".csv";
+    	
+    	//Packet count file path
       	String file01 = "/Users/davidcrafts/Dropbox/network-analysis-data/" + getIpAddress(addr.getAddress())  + "_" 
     			+ getCurrentDateTime().substring(0, 10) + "_COUNT" + ".csv";
     
@@ -129,24 +134,19 @@ public class App {
     	// Write the header for the csv, overwrite previous data
     	write(file, "time,bytes/sec", false);
     	
-    	// Loop until program is stopped
-    	// TODO add a way to stop this loop
-    	//StringBuilder packetHeader = new StringBuilder();
     	
-    	int counter=0;
     	
-    	//Declares hashtable
+      	//Declares hashtable for counting ip address instances 
     	Hashtable<String, String> ipTally = new Hashtable<String, String>(); 
     	
-    	
     	while(true) {
+    
     		
-    		counter++;
-    		
-    		// Attempt to read a packet from handle
     		try {
     			now = System.currentTimeMillis();
-				Packet packet = handle.getNextPacketEx();
+    			
+    		 	// Attempt to read a packet from handle
+				Packet packet = handle.getNextPacketEx(); 
 				
 				 //get the IP packet class
 				 IpPacket ipPacket = packet.get(IpPacket.class);
@@ -161,17 +161,16 @@ public class App {
 						
 						String count = ipTally.get(dstIp);
 						
-						//Increment hashtable instance 
-						
+						//Increment hashtable instance, converts string to int then back
 						int i = Integer.parseInt(count) +1;
-						
 						count = Integer.toString(i);
 						
+						//Puts updated count back into hashtable
 						ipTally.put(dstIp, count );
 						
-					}else {
-						
-						//If not in hashtable, put the IP and count at 1
+					}
+				 	else {
+						//If not in hashtable, put the IP address and count at 1 in hashtable
 						ipTally.put(dstIp, "1");
 						
 					}
@@ -225,14 +224,11 @@ public class App {
 			}	
  
 			
+    		//Writes hashtable to file for each run of the while loop
     		writeHashtable(file01, ipTally);
     	} //END WHILE LOOP
     	
-    	//System.out.print(ipTally.toString()); //Prints out the hashtable
-    	
-    //	writeHashtable(file01, ipTally); //Writes data out to a file
-    	
-    	//sendToServer(ipTally);
+    
     }
     
     /**
@@ -263,19 +259,14 @@ public class App {
     private static void writeHashtable(String file, Hashtable<String, String> a) {
     	String eol = System.getProperty("line.separator");
     
-    	//Writes header of file 
-    	try (Writer writer = new FileWriter(file)) {
-    		 writer.append("IP Address")
-	          .append(',')
-	          .append("Packet Count")
-	          .append(eol);
-
-    	//Writes formatted hashtable out to file 
+    
+    	try (Writer writer = new FileWriter(file)) {	
+    		//Writes header of file 
+    		writer.append("IP Address").append(',').append("Packet Count").append(eol);
+    		
+    	//Writes hashtable out to file 
     	  for (Entry<String, String> entry : a.entrySet()) {
-    	    writer.append(entry.getKey())
-    	          .append(',')
-    	          .append(entry.getValue())
-    	          .append(eol);
+    	    writer.append(entry.getKey()).append(',').append(entry.getValue()).append(eol);         
     	  }
     	} catch (IOException ex) {
     	  ex.printStackTrace(System.err);
@@ -291,59 +282,7 @@ public class App {
     private static String getCurrentDateTime() {
     	return Instant.now().toString();
     }
-    
-    
-    
-    /**
-     * Sends the desired hashtable of IP addresses and count to the server
-     * 
-     * 
-     * @param a
-     */
-    public static void sendToServer (Hashtable<String, Integer> a) {
-    	
-
-    	try {
-			
-			Socket cs = new Socket ("10.200.148.105", 8001); //Declares socket
-			
-			DataOutputStream douts = new DataOutputStream(cs.getOutputStream()); //Output stream 
-			DataInputStream dins = new DataInputStream(cs.getInputStream()); //Input Stream
-			
-			BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); //Buffered Reader
-			
-			String msgin = ""; //Message in
-			
-			String msgout = ""; //Message out
-			
-			douts.writeUTF("Connected"); //Write out connected to server after establishing connection
-			
-			msgin = dins.readUTF(); //Read in from server
-			
-			//If the message from the server equals OK then
-			if (msgin.equals("OK")) {
-				
-			System.out.println(msgin); //Print the message 
-
-				douts.writeUTF(a.toString()); //Write out the Hashtable to the server
-				
-			}else {
-				
-				System.out.print("ERROR");
-			}
-					
-    	}//END TRY
-    		catch (Exception e) {
-				
-				System.out.println("\n" + e.getMessage());
-				System.exit(1);
-			}
-			
-
-		
-	}//END sendToServe
-    
-    
+      
     //By Wayan Saryada @ https://kodejava.org/how-do-i-convert-raw-ip-address-to-string/
     private static String getIpAddress(byte[] rawBytes) {
         int i = 4;
@@ -356,10 +295,6 @@ public class App {
         }
         return ipAddress.toString();
     }
-    
-    
-    
-    
-    
+     
     
 } //END APP
